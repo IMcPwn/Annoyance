@@ -1,6 +1,7 @@
 /* Skynet Discord Chat Bot by IMcPwn.
 
  * Copyright 2016 IMcPwn 
+
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -40,7 +41,6 @@ func main() {
         return
     }
 
-    //dg.AddHandler(messageCreate)
     dg.AddHandler(VoiceStateUpdate)
 
     // Open the websocket and begin listening.
@@ -60,6 +60,7 @@ func main() {
     }
     fmt.Println("Logged in as " + prefix.Username)
 
+    // Set status to "away"
     dg.UpdateStatus(1, "")
 
     fmt.Println("Welcome to Skynet! Press enter to quit.")
@@ -68,6 +69,8 @@ func main() {
     return
 }
 
+// This function is called whenever there is a voice state update
+// i.e mute/unmute, channel join/leave, etc.
 func VoiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
     fmt.Println("[*] Called")
     if v.ChannelID == "" {
@@ -78,6 +81,7 @@ func VoiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
         fmt.Println("[X] Already speaking")
         return
     }
+    // 10% chance of not ignoring the call 
     if rand.Intn(10) != 0 {
         fmt.Println("[X] Ignoring call")
         return
@@ -85,6 +89,7 @@ func VoiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
     fmt.Println("[*] Responding to call")
 
     fmt.Println("[*] Joining Channel ID #" + v.ChannelID)
+    // Join the server unmuted and deafened
     dgv, err := s.ChannelVoiceJoin(v.GuildID, v.ChannelID, false, true)
     if err != nil {
         fmt.Println(err)
@@ -95,9 +100,11 @@ func VoiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
     files, _ := ioutil.ReadDir(*FOLDER)
     for _, f := range files {
         fmt.Println("[*] PlayAudioFile:", f.Name())
+        // Say we're "playing" the name of the audio file
         s.UpdateStatus(0, f.Name())
         dgvoice.PlayAudioFile(dgv, fmt.Sprintf("%s/%s", *FOLDER, f.Name()))
     }
+    // Set status to away
     s.UpdateStatus(1, "")
     defer dgv.Disconnect()
     defer dgv.Close()
