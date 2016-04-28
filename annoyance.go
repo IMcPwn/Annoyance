@@ -34,14 +34,14 @@ func main() {
     FOLDER = flag.String("f", "", "Folder that contains the MP3s to play")
     flag.Parse()
 	
-	if *FOLDER == "" {
-	    fmt.Println("-f option is required")
-	    flag.Usage()
-	    return
-	}
-	if *TOKEN == "" {
-	    fmt.Println("-t option is required")
-	    flag.Usage()
+    if *FOLDER == "" {
+        fmt.Println("-f option is required")
+        flag.Usage()
+        return
+    }
+    if *TOKEN == "" {
+        fmt.Println("-t option is required")
+        flag.Usage()
         return
     }
 
@@ -72,7 +72,7 @@ func main() {
     }
     fmt.Println("Logged in as " + prefix.Username)
 
-    // Set status to "away"
+    // Set Discord status to "away"
     dg.UpdateStatus(1, "")
 
     fmt.Println("Welcome to Annoyance! Press enter to quit.")
@@ -117,10 +117,10 @@ func VoiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
         s.UpdateStatus(0, f.Name())
         dgvoice.PlayAudioFile(dgv, fmt.Sprintf("%s/%s", *FOLDER, f.Name()))
     }
-    // Set status to away
+    // Set Discord status to away
     s.UpdateStatus(1, "")
-    defer dgv.Disconnect()
-    defer dgv.Close()
+    dgv.Disconnect()
+    dgv.Close()
 }
 
 // This function will be called every time a new message is created 
