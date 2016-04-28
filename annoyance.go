@@ -35,13 +35,13 @@ func main() {
     flag.Parse()
 	
     if *FOLDER == "" {
+    	flag.Usage()
         fmt.Println("-f option is required")
-        flag.Usage()
         return
     }
     if *TOKEN == "" {
+    	flag.Usage()
         fmt.Println("-t option is required")
-        flag.Usage()
         return
     }
 
@@ -81,8 +81,11 @@ func main() {
     return
 }
 
-// This function is called whenever there is a voice state update
-// i.e mute/unmute, channel join/leave, etc.
+// This function is called whenever there is a voice state update.
+// This function is responsible for playing the MP3s.
+// TODO: Only play MP3s when a user joins a channel.
+// This may be possible by caching all the previous voice states.
+// var VoiceStateCache map[string]*discordgo.VoiceState
 func VoiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
     fmt.Println("[*] VoiceStateUpdate Called")
     if v.ChannelID == "" {
@@ -125,6 +128,7 @@ func VoiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
 
 // This function will be called every time a new message is created 
 // on any channel that the autenticated user has access to.
+// This function is responsible for responding to @mentions.
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
         if len(m.Mentions) < 1 {
             return
