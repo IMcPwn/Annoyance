@@ -1,5 +1,4 @@
-/* Skynet Discord Chat Bot by IMcPwn.
-
+/* Annoyance Discord Chat Bot by IMcPwn.
  * Copyright 2016 IMcPwn 
 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -63,7 +62,7 @@ func main() {
     // Set status to "away"
     dg.UpdateStatus(1, "")
 
-    fmt.Println("Welcome to Skynet! Press enter to quit.")
+    fmt.Println("Welcome to Annoyance! Press enter to quit.")
     var input string
     fmt.Scanln(&input)
     return
@@ -81,8 +80,9 @@ func VoiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
         fmt.Println("[X] Already speaking")
         return
     }
-    // 10% chance of not ignoring the call 
-    if rand.Intn(10) != 0 {
+    // 1/20 chance of not ignoring the call 
+    // This is so the bot is not triggered every time there is a voice update.
+    if rand.Intn(20) != 1 {
         fmt.Println("[X] Ignoring call")
         return
     }
