@@ -18,36 +18,36 @@ package main
 
 import (
     "fmt"
-    "os"
-    "strings"
-    "strconv"
+    "io/ioutil"
+    "flag"
     "math/rand"
 
     "github.com/bwmarrin/discordgo"
     "github.com/bwmarrin/dgvoice"
 )
 
-func main() {
+var FOLDER *string
 
-    TOKEN := os.Getenv("TOKEN")
-    /* Alternatively you can use username/password instead of a token
-    USER := os.Getenv("USER")
-    PASS := os.Getenv("PASS")
-    dg, err := discordogo.New(USER, PASS)
-    */
-    dg, err := discordgo.New(TOKEN)
+func main() {
+    TOKEN := flag.String("t", "", "Discord authentication token")
+    FOLDER = flag.String("f", "", "Folder that contains the mp3s to play")
+    flag.Parse()
+
+    dg, err := discordgo.New(*TOKEN)
     if err != nil {
         fmt.Println(err)
+        flag.Usage()
         return
     }
 
-    // Register messageCreate as a callback for the messageCreate events.
-    dg.AddHandler(messageCreate)
+    //dg.AddHandler(messageCreate)
+    dg.AddHandler(VoiceStateUpdate)
 
     // Open the websocket and begin listening.
     err = dg.Open()
     if err != nil {
         fmt.Println(err)
+        flag.Usage()
         return
     }
 
@@ -55,11 +55,12 @@ func main() {
     prefix, err := dg.User("@me")
     if err != nil {
         fmt.Println(err)
-        fmt.Println("Make sure TOKEN is defined and valid\n" +
-        "Windows example: set TOKEN=change_to_token\nLinux example: export TOKEN=change_to_token")
+        flag.Usage()
         return
     }
     fmt.Println("Logged in as " + prefix.Username)
+
+    dg.UpdateStatus(1, "")
 
     fmt.Println("Welcome to Skynet! Press enter to quit.")
     var input string
@@ -67,36 +68,37 @@ func main() {
     return
 }
 
-func handleCommands(s *discordgo.Session, m *discordgo.MessageCreate) {
-    GUILD := os.Getenv("GUILD")
-    fileName := "test.mp3"
-    // Connect to voice channel.
-    // NOTE: Setting mute to false, deaf to true.
-    dgv, err := s.ChannelVoiceJoin(GUILD, m.ChannelID, false, true)
+func VoiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
+    fmt.Println("[*] Called")
+    if v.ChannelID == "" {
+        fmt.Println("[X] Invalid channel")
+        return
+    }
+    if len(s.VoiceConnections) != 0 {
+        fmt.Println("[X] Already speaking")
+        return
+    }
+    if rand.Intn(10) != 0 {
+        fmt.Println("[X] Ignoring call")
+        return
+    }
+    fmt.Println("[*] Responding to call")
+
+    fmt.Println("[*] Joining Channel ID #" + v.ChannelID)
+    dgv, err := s.ChannelVoiceJoin(v.GuildID, v.ChannelID, false, true)
     if err != nil {
         fmt.Println(err)
         return
     }
-    // Say we're "playing" the file name
-    s.UpdateStatus(0, fileName)
-    dgv.PlayAudioFile(dgv, fileName)
-    // TODO: defer?
-    dgv.Close()
-}
-
-// This function will be called (due to AddHandler above) every time a new
-// message is created on any channel that the autenticated user has access to.
-func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-        if len(m.Mentions) < 1 {
-            return
-        }
-        prefix, err := s.User("@me")
-        if err != nil {
-            fmt.Println(err)
-            return
-        }
-        if m.Mentions[0].ID == prefix.ID  {
-            fmt.Println("Mentioned. Handling commands.")
-            handleCommands(s, m)
-        }
+    // Start loop and attempt to play all files in the given folder
+    fmt.Println("[*] Reading Folder: ", *FOLDER)
+    files, _ := ioutil.ReadDir(*FOLDER)
+    for _, f := range files {
+        fmt.Println("[*] PlayAudioFile:", f.Name())
+        s.UpdateStatus(0, f.Name())
+        dgvoice.PlayAudioFile(dgv, fmt.Sprintf("%s/%s", *FOLDER, f.Name()))
+    }
+    s.UpdateStatus(1, "")
+    defer dgv.Disconnect()
+    defer dgv.Close()
 }
