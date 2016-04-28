@@ -1,4 +1,4 @@
-/* Annoyance Discord Chat Bot by IMcPwn.
+/* Annoyance Discord Bot by IMcPwn.
  * Copyright 2016 IMcPwn 
 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,35 +26,48 @@ import (
     "github.com/bwmarrin/dgvoice"
 )
 
+// The folder that contains the MP3s used
 var FOLDER *string
 
 func main() {
     TOKEN := flag.String("t", "", "Discord authentication token")
-    FOLDER = flag.String("f", "", "Folder that contains the mp3s to play")
+    FOLDER = flag.String("f", "", "Folder that contains the MP3s to play")
     flag.Parse()
+	
+	if *FOLDER == "" {
+	    fmt.Println("-f option is required")
+	    flag.Usage()
+	    return
+	}
+	if *TOKEN == "" {
+	    fmt.Println("-t option is required")
+	    flag.Usage()
+        return
+    }
 
     dg, err := discordgo.New(*TOKEN)
     if err != nil {
-        fmt.Println(err)
         flag.Usage()
+        fmt.Println(err)
         return
     }
 
     dg.AddHandler(VoiceStateUpdate)
+    dg.AddHandler(messageCreate)
 
     // Open the websocket and begin listening.
     err = dg.Open()
     if err != nil {
-        fmt.Println(err)
         flag.Usage()
+        fmt.Println(err)
         return
     }
 
     // Make sure we're logged in successfully
     prefix, err := dg.User("@me")
     if err != nil {
-        fmt.Println(err)
         flag.Usage()
+        fmt.Println(err)
         return
     }
     fmt.Println("Logged in as " + prefix.Username)
@@ -71,7 +84,7 @@ func main() {
 // This function is called whenever there is a voice state update
 // i.e mute/unmute, channel join/leave, etc.
 func VoiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
-    fmt.Println("[*] Called")
+    fmt.Println("[*] VoiceStateUpdate Called")
     if v.ChannelID == "" {
         fmt.Println("[X] Invalid channel")
         return
@@ -108,4 +121,26 @@ func VoiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
     s.UpdateStatus(1, "")
     defer dgv.Disconnect()
     defer dgv.Close()
+}
+
+// This function will be called every time a new message is created 
+// on any channel that the autenticated user has access to.
+func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+        if len(m.Mentions) < 1 {
+            return
+        }
+        prefix, err := s.User("@me")
+        if err != nil {
+            fmt.Println(err)
+            return
+        } 
+        if m.Mentions[0].ID == prefix.ID  {
+            fmt.Println("[*] Mentioned. Handling commands.")
+            help := "Hello. I'm a bot. I may or may not follow you into channels. "
+            _, err = s.ChannelMessageSend(m.ChannelID, "@" + m.Author.Username + m.Author.Discriminator + " " + help)
+            if err != nil {
+                fmt.Println(err)
+                return
+            }
+        }
 }
