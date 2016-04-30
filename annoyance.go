@@ -113,7 +113,11 @@ func VoiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
     }
     // Start loop and attempt to play all files in the given folder
     fmt.Println("[*] Reading Folder: ", *FOLDER)
-    files, _ := ioutil.ReadDir(*FOLDER)
+    files, err := ioutil.ReadDir(*FOLDER)
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
     for _, f := range files {
         fmt.Println("[*] PlayAudioFile:", f.Name())
         // Say we're "playing" the name of the audio file
